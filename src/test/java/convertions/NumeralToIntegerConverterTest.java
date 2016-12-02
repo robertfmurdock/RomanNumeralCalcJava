@@ -98,4 +98,11 @@ public class NumeralToIntegerConverterTest {
         assertThat(this.converter.toInteger("LLL")).isEmpty();
         assertThat(this.converter.toInteger("DD")).isEmpty();
     }
+
+    @Test
+    public void toInteger_willReturnNoValueInvalidReducerCombinationsAreUsed() throws Exception {
+        assertThat(this.converter.toInteger("IL")).isEmpty();
+        assertThat(this.converter.toInteger("IC")).isEmpty();
+        assertThat(this.converter.toInteger("XM")).isEmpty();
+    }
 }

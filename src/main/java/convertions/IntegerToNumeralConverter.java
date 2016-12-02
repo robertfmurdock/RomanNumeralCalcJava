@@ -47,15 +47,23 @@ class IntegerToNumeralConverter {
     }
 
     private void useReducedNumeral(final StringBuilder builder, final NumeralValueTuple numeralTuple) {
-        final NumeralValueTuple nextHigherValueNumeral = getNextHigherValueNumeral(numeralTuple);
+        final Optional<NumeralValueTuple> nextHigherValueNumeralOptional = numeralTuple.getNextHigherValueNumeral();
 
-        if (nextHigherValueNumeralWasPreviouslyUsed(builder, nextHigherValueNumeral)) {
-            overwritePreviousCharacter(builder);
+        if (nextHigherValueNumeralOptional.isPresent()) {
+            final NumeralValueTuple nextHigherValueNumeral = nextHigherValueNumeralOptional.get();
+            if (nextHigherValueNumeralWasPreviouslyUsed(builder, nextHigherValueNumeral)) {
+                overwritePreviousCharacter(builder);
 
-            final NumeralValueTuple nextNextHigherValueNumeral = getNextHigherValueNumeral(nextHigherValueNumeral);
-            applyReducedNumeral(builder, numeralTuple, nextNextHigherValueNumeral);
-        } else {
-            applyReducedNumeral(builder, numeralTuple, nextHigherValueNumeral);
+                final Optional<NumeralValueTuple> nextNextHigherValueNumeralOptional = nextHigherValueNumeral.getNextHigherValueNumeral();
+
+                if (nextNextHigherValueNumeralOptional.isPresent()) {
+                    final NumeralValueTuple nextNextHigherValueNumeral = nextNextHigherValueNumeralOptional.get();
+                    applyReducedNumeral(builder, numeralTuple, nextNextHigherValueNumeral);
+                }
+
+            } else {
+                applyReducedNumeral(builder, numeralTuple, nextHigherValueNumeral);
+            }
         }
     }
 
@@ -83,8 +91,4 @@ class IntegerToNumeralConverter {
         return previousNumeralChar == nextHigherValueNumeral.getNumeral();
     }
 
-    private NumeralValueTuple getNextHigherValueNumeral(final NumeralValueTuple numeralTuple) {
-        final int numeralTupleIndex = NumeralValueTuple.SORTED_NUMERALS.indexOf(numeralTuple);
-        return NumeralValueTuple.SORTED_NUMERALS.get(numeralTupleIndex - 1);
-    }
 }

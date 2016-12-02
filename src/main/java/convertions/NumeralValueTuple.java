@@ -37,6 +37,14 @@ class NumeralValueTuple {
         this.type = type;
     }
 
+    Optional<NumeralValueTuple> getNextHigherValueNumeral() {
+        final int numeralTupleIndex = SORTED_NUMERALS.indexOf(this);
+        if (numeralTupleIndex <= 0) {
+            return Optional.empty();
+        }
+
+        return Optional.of(SORTED_NUMERALS.get(numeralTupleIndex - 1));
+    }
 
     int getValue() {
         return value;

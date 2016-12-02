@@ -17,7 +17,18 @@ class NumeralToIntegerConverter {
             return Optional.empty();
         }
 
-        return Optional.of(this.computeValueOfNumerals(numeralTuples));
+        final int value = this.computeValueOfNumerals(numeralTuples);
+
+        if (verifyNumeralIsCorrectlyOrdered(numeral, value)) {
+            return Optional.of(value);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private boolean verifyNumeralIsCorrectlyOrdered(final String numeral, final int value) {
+        final Optional<String> result = new IntegerToNumeralConverter().toNumeral(value);
+        return result.isPresent() && result.get().equals(numeral);
     }
 
     private boolean anyCharactersCouldNotBeConverted(final List<Optional<NumeralValueTuple>> numeralAsOptionalTuples) {
