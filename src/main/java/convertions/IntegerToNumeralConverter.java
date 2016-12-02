@@ -15,28 +15,29 @@ class IntegerToNumeralConverter {
         return Optional.of(reduceValueUntilRenderedAsNumeral(value));
     }
 
-    private String reduceValueUntilRenderedAsNumeral(int remainingValue) {
+    private String reduceValueUntilRenderedAsNumeral(final int value) {
+        int remainingValue = value;
         final StringBuilder builder = new StringBuilder();
 
         for (final NumeralValueTuple numeralTuple : NumeralValueTuple.SORTED_NUMERALS) {
-            final int valueConsumed = applyNumeralToString(builder, remainingValue, numeralTuple);
-            remainingValue -= valueConsumed;
+            remainingValue = applyNumeralToStringAndReturnRemainder(builder, remainingValue, numeralTuple);
         }
+
         return builder.toString();
     }
 
-    private int applyNumeralToString(final StringBuilder builder,
-                                     final int mutableValue,
-                                     final NumeralValueTuple numeralTuple) {
-        final int quotient = mutableValue / numeralTuple.getValue();
+    private int applyNumeralToStringAndReturnRemainder(final StringBuilder builder,
+                                                       final int remainingValue,
+                                                       final NumeralValueTuple numeralTuple) {
+        final int quotient = remainingValue / numeralTuple.getValue();
 
         if (quotient <= numeralTuple.getType().getMaxNumberOfRepetitions()) {
             repeatValue(builder, numeralTuple.getNumeral(), quotient);
         } else {
             useReducedNumeral(builder, numeralTuple);
         }
-
-        return numeralTuple.getValue() * quotient;
+        final int valueConsumed = numeralTuple.getValue() * quotient;
+        return remainingValue - valueConsumed;
     }
 
     private void repeatValue(final StringBuilder builder, final Character numeral, final int quotient) {
@@ -52,12 +53,17 @@ class IntegerToNumeralConverter {
             overwritePreviousCharacter(builder);
 
             final NumeralValueTuple nextNextHigherValueNumeral = getNextHigherValueNumeral(nextHigherValueNumeral);
-            builder.append(numeralTuple.getNumeral());
-            builder.append(nextNextHigherValueNumeral.getNumeral());
+            applyReducedNumeral(builder, numeralTuple, nextNextHigherValueNumeral);
         } else {
-            builder.append(numeralTuple.getNumeral());
-            builder.append(nextHigherValueNumeral.getNumeral());
+            applyReducedNumeral(builder, numeralTuple, nextHigherValueNumeral);
         }
+    }
+
+    private void applyReducedNumeral(final StringBuilder builder,
+                                     final NumeralValueTuple reducingNumeral,
+                                     final NumeralValueTuple reducedNumeral) {
+        builder.append(reducingNumeral.getNumeral());
+        builder.append(reducedNumeral.getNumeral());
     }
 
     private void overwritePreviousCharacter(final StringBuilder builder) {
