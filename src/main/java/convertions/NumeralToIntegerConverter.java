@@ -30,6 +30,7 @@ class NumeralToIntegerConverter {
 
     private Optional<List<NumeralValueTuple>> unpackOptionalsIfPossible(final List<Optional<NumeralValueTuple>> possibleTuples) {
         final List<NumeralValueTuple> numeralTuples = new ArrayList<>(possibleTuples.size());
+
         for (final Optional<NumeralValueTuple> optional : possibleTuples) {
             if (optional.isPresent()) {
                 numeralTuples.add(optional.get());
@@ -79,17 +80,15 @@ class NumeralToIntegerConverter {
         Optional<Integer> aggregateValue = Optional.of(0);
         NumeralValueTuple previous = NULL_TUPLE;
         for (final NumeralValueTuple tuple : numeralTuples) {
-            final Optional<Integer> tupleTotalValue = computeValueOfNumeral(previous, tuple);
-            aggregateValue = sum(aggregateValue, tupleTotalValue);
+            final Optional<Integer> numeralValue = computeValueOfNumeral(previous, tuple);
+            aggregateValue = sum(aggregateValue, numeralValue);
             previous = tuple;
         }
         return aggregateValue;
     }
 
-    private Optional<Integer> sum(final Optional<Integer> aggregateValue, final Optional<Integer> value) {
-        return aggregateValue.flatMap(
-                currentValue -> value.map(tupleValue -> currentValue + tupleValue)
-        );
+    private Optional<Integer> sum(final Optional<Integer> optionalA, final Optional<Integer> optionalB) {
+        return combine(optionalA, optionalB, (a, b) -> a + b);
     }
 
     private Optional<Integer> computeValueOfNumeral(final NumeralValueTuple previous, final NumeralValueTuple tuple) {
@@ -124,4 +123,14 @@ class NumeralToIntegerConverter {
         return previous.getValue() < tuple.getValue();
     }
 
+    private <A, B, C> Optional<C> combine(final Optional<A> optionalA,
+                                          final Optional<B> optionalB,
+                                          final Combiner<A, B, C> combiner) {
+        return optionalA.flatMap(a -> optionalB.map(b -> combiner.combine(a, b)));
+    }
+
+    @FunctionalInterface
+    private interface Combiner<A, B, C> {
+        C combine(A a, B b);
+    }
 }
