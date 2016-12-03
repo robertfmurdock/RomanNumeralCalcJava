@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static convertions.NumeralValueTuple.NULL_TUPLE;
+import static convertions.NumeralValueTuple.getTuple;
+
 class NumeralToIntegerConverter {
 
     Optional<Integer> toInteger(final String numeral) {
@@ -17,18 +20,7 @@ class NumeralToIntegerConverter {
             return Optional.empty();
         }
 
-        final int value = this.computeValueOfNumerals(numeralTuples);
-
-        if (verifyNumeralIsCorrectlyOrdered(numeral, value)) {
-            return Optional.of(value);
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private boolean verifyNumeralIsCorrectlyOrdered(final String numeral, final int value) {
-        final Optional<String> result = new IntegerToNumeralConverter().toNumeral(value);
-        return result.isPresent() && result.get().equals(numeral);
+        return this.computeValueOfNumerals(numeralTuples);
     }
 
     private boolean anyCharactersCouldNotBeConverted(final List<Optional<NumeralValueTuple>> numeralAsOptionalTuples) {
@@ -54,7 +46,7 @@ class NumeralToIntegerConverter {
     private boolean violatesMaxNumberOfConsecutiveRepetitionsRule(final List<NumeralValueTuple> numeralTuples) {
         int repeatCount = 0;
 
-        NumeralValueTuple previous = NumeralValueTuple.NULL_TUPLE;
+        NumeralValueTuple previous = NULL_TUPLE;
         for (final NumeralValueTuple tuple : numeralTuples) {
             if (tuple != previous) {
                 repeatCount = 1;
@@ -71,19 +63,53 @@ class NumeralToIntegerConverter {
         return false;
     }
 
-    private int computeValueOfNumerals(final List<NumeralValueTuple> numeralTuples) {
+    private Optional<Integer> computeValueOfNumerals(final List<NumeralValueTuple> numeralTuples) {
         int value = 0;
-        NumeralValueTuple previous = NumeralValueTuple.NULL_TUPLE;
+        NumeralValueTuple previous = NULL_TUPLE;
         for (final NumeralValueTuple tuple : numeralTuples) {
-            if (previousNumeralShouldReduce(previous, tuple)) {
-                value -= previous.getValue();
-                value += getReducedValueOfTuple(previous, tuple);
+            final Optional<Integer> tupleTotalValue = computeValueOfNumeral(previous, tuple);
+            if (tupleTotalValue.isPresent()) {
+                value += tupleTotalValue.get();
             } else {
-                value += tuple.getValue();
+                return tupleTotalValue;
             }
             previous = tuple;
         }
-        return value;
+        return Optional.of(value);
+    }
+
+    private Optional<Integer> computeValueOfNumeral(final NumeralValueTuple previous, final NumeralValueTuple tuple) {
+        if (!previousNumeralShouldReduce(previous, tuple)) {
+            return Optional.of(tuple.getValue());
+        } else if (canBeLegallyReducedByPreviousNumeral(previous, tuple)) {
+            final int valueOfBothNumerals = getReducedValueOfTuple(previous, tuple);
+            final int valueThatWillAlsoRemovePreviouslyAddedNumeral =
+                    valueOfBothNumerals - previous.getValue();
+            return Optional.of(valueThatWillAlsoRemovePreviouslyAddedNumeral);
+        } else {
+            return Optional.empty();
+        }
+
+    }
+
+    private boolean canBeLegallyReducedByPreviousNumeral(final NumeralValueTuple previous, final NumeralValueTuple tuple) {
+        return previous == NULL_TUPLE || matchesNextHigherOrNextNextHigherNumeral(previous, tuple);
+    }
+
+    private boolean matchesNextHigherOrNextNextHigherNumeral(final NumeralValueTuple previous, final NumeralValueTuple candidate) {
+        final Optional<NumeralValueTuple> nextHigherTupleOptional = previous.getNextHigherValueNumeral();
+        if (!nextHigherTupleOptional.isPresent()) {
+            return false;
+        } else if (nextHigherTupleOptional.get() == candidate) {
+            return true;
+        }
+
+        return matchesNextHigher(nextHigherTupleOptional.get(), candidate);
+    }
+
+    private boolean matchesNextHigher(final NumeralValueTuple previous, final NumeralValueTuple candidate) {
+        final Optional<NumeralValueTuple> nextNextHigherTupleOptional = previous.getNextHigherValueNumeral();
+        return nextNextHigherTupleOptional.isPresent() && nextNextHigherTupleOptional.get() == candidate;
     }
 
     private int getReducedValueOfTuple(final NumeralValueTuple previous, final NumeralValueTuple tuple) {
@@ -100,7 +126,7 @@ class NumeralToIntegerConverter {
     }
 
     private Optional<NumeralValueTuple> mapCharacter(final int character) {
-        return NumeralValueTuple.getTuple((char) character);
+        return getTuple((char) character);
     }
 
 }
