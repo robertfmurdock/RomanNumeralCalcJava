@@ -76,18 +76,20 @@ class NumeralToIntegerConverter {
     }
 
     private Optional<Integer> computeValueOfNumerals(final List<NumeralValueTuple> numeralTuples) {
-        int value = 0;
+        Optional<Integer> aggregateValue = Optional.of(0);
         NumeralValueTuple previous = NULL_TUPLE;
         for (final NumeralValueTuple tuple : numeralTuples) {
             final Optional<Integer> tupleTotalValue = computeValueOfNumeral(previous, tuple);
-            if (tupleTotalValue.isPresent()) {
-                value += tupleTotalValue.get();
-            } else {
-                return Optional.empty();
-            }
+            aggregateValue = sum(aggregateValue, tupleTotalValue);
             previous = tuple;
         }
-        return Optional.of(value);
+        return aggregateValue;
+    }
+
+    private Optional<Integer> sum(final Optional<Integer> aggregateValue, final Optional<Integer> value) {
+        return aggregateValue.flatMap(
+                currentValue -> value.map(tupleValue -> currentValue + tupleValue)
+        );
     }
 
     private Optional<Integer> computeValueOfNumeral(final NumeralValueTuple previous, final NumeralValueTuple tuple) {
